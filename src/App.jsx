@@ -64,6 +64,7 @@ export default function App() {
           <Route path="/policies" element={<Policies />} />
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
+          <Route path="/admin/orders" element={<AdminOrders />} />
           <Route
             path="/profile"
             element={
