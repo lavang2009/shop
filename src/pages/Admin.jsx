@@ -5,6 +5,7 @@ import { useAuth } from "../context/AuthContext";
 import { useProducts } from "../context/ProductContext";
 import { formatCurrency } from "../utils/format";
 import LoadingScreen from "../components/LoadingScreen";
+import { uploadImage } from "../services/uploadImage";
 
 const initialForm = {
   name: "",
@@ -17,7 +18,15 @@ const initialForm = {
 
 export default function Admin() {
   const { profile } = useAuth();
-  const { products, loading, addProduct, updateProduct, removeProduct, canManageProducts } = useProducts();
+  const {
+    products,
+    loading,
+    addProduct,
+    updateProduct,
+    removeProduct,
+    canManageProducts,
+  } = useProducts();
+
   const [form, setForm] = useState(initialForm);
   const [editingId, setEditingId] = useState(null);
   const [saving, setSaving] = useState(false);
@@ -27,6 +36,7 @@ export default function Admin() {
   const filtered = useMemo(() => {
     const lower = search.trim().toLowerCase();
     if (!lower) return products;
+
     return products.filter((item) => {
       return (
         item.name?.toLowerCase().includes(lower) ||
@@ -37,11 +47,11 @@ export default function Admin() {
   }, [products, search]);
 
   useEffect(() => {
-    if (!form.imageFile) {
-      return undefined;
-    }
+    if (!form.imageFile) return undefined;
+
     const url = URL.createObjectURL(form.imageFile);
     setPreview(url);
+
     return () => URL.revokeObjectURL(url);
   }, [form.imageFile]);
 
@@ -57,10 +67,18 @@ export default function Admin() {
 
   const handleFile = (file) => {
     if (!file) return;
+
+    const allowedTypes = ["image/jpeg", "image/jpg", "image/png", "image/webp"];
+    if (!allowedTypes.includes(file.type)) {
+      toast.error("Chỉ chấp nhận ảnh JPG, PNG hoặc WEBP.");
+      return;
+    }
+
     if (file.size > 5 * 1024 * 1024) {
       toast.error("Ảnh phải nhỏ hơn 5MB.");
       return;
     }
+
     handleChange("imageFile", file);
   };
 
@@ -82,17 +100,41 @@ export default function Admin() {
     event.preventDefault();
 
     if (!form.name.trim()) return toast.error("Vui lòng nhập tên sản phẩm.");
-    if (!form.price || Number(form.price) <= 0) return toast.error("Giá phải lớn hơn 0.");
-    if (!form.description.trim()) return toast.error("Vui lòng nhập mô tả chi tiết.");
+    if (!form.price || Number(form.price) <= 0) {
+      return toast.error("Giá phải lớn hơn 0.");
+    }
+    if (!form.description.trim()) {
+      return toast.error("Vui lòng nhập mô tả chi tiết.");
+    }
+    if (!editingId && !form.imageFile) {
+      return toast.error("Vui lòng chọn ảnh sản phẩm.");
+    }
 
     setSaving(true);
     try {
-      if (editingId) {
-        await updateProduct(editingId, form);
-      } else {
-        await addProduct(form);
+      let imageUrl = preview;
+
+      if (form.imageFile) {
+        imageUrl = await uploadImage(form.imageFile);
       }
+
+      const payload = {
+        name: form.name.trim(),
+        price: Number(form.price),
+        category: form.category.trim() || "Sữa rửa mặt",
+        shortDescription: form.shortDescription.trim(),
+        description: form.description.trim(),
+        imageUrl,
+      };
+
+      if (editingId) {
+        await updateProduct(editingId, payload);
+      } else {
+        await addProduct(payload);
+      }
+
       resetForm();
+      toast.success(editingId ? "Cập nhật sản phẩm thành công." : "Thêm sản phẩm thành công.");
     } catch (error) {
       console.error(error);
       toast.error(error.message || "Thao tác thất bại.");
@@ -104,9 +146,11 @@ export default function Admin() {
   const handleDelete = async (product) => {
     const ok = window.confirm(`Xóa sản phẩm "${product.name}"?`);
     if (!ok) return;
+
     setSaving(true);
     try {
       await removeProduct(product.id);
+      toast.success("Đã xóa sản phẩm.");
     } catch (error) {
       toast.error(error.message || "Không thể xóa sản phẩm.");
     } finally {
@@ -115,6 +159,7 @@ export default function Admin() {
   };
 
   if (loading) return <LoadingScreen label="Đang tải trang quản trị..." />;
+
   if (!canManageProducts) {
     return (
       <section className="section-shell py-16">
@@ -123,13 +168,17 @@ export default function Admin() {
             <ShieldCheck className="h-4 w-4" />
             Chế độ quản trị
           </div>
-          <h1 className="mt-4 text-3xl font-black text-slate-900">Bạn chưa có quyền quản trị</h1>
+          <h1 className="mt-4 text-3xl font-black text-slate-900">
+            Bạn chưa có quyền quản trị
+          </h1>
           <p className="mt-3 max-w-2xl text-sm leading-7 text-slate-600">
-            Trang này chỉ dành cho tài khoản có role <strong>seller</strong> hoặc <strong>admin</strong>.
-            Hãy gán role trong collection <code>users/{uid}</code> của Firestore.
+            Trang này chỉ dành cho tài khoản có role <strong>seller</strong> hoặc{" "}
+            <strong>admin</strong>. Hãy gán role trong collection{" "}
+            <code>users/{profile?.uid || "uid"}</code> của Firestore.
           </p>
           <div className="mt-6 rounded-2xl bg-slate-50 p-4 text-sm text-slate-600">
-            Tài khoản hiện tại: <strong>{profile?.displayName || "Chưa có tên"}</strong> — role{" "}
+            Tài khoản hiện tại:{" "}
+            <strong>{profile?.displayName || "Chưa có tên"}</strong> — role{" "}
             <strong>{profile?.role || "customer"}</strong>
           </div>
         </div>
@@ -143,7 +192,7 @@ export default function Admin() {
         <div>
           <h1 className="page-title">Trang quản trị</h1>
           <p className="page-subtitle">
-            Thêm, sửa, xóa sản phẩm và upload ảnh lên Firebase Storage.
+            Thêm, sửa, xóa sản phẩm và upload ảnh lên Cloudinary.
           </p>
         </div>
         <div className="inline-flex items-center gap-2 rounded-full bg-emerald-50 px-4 py-2 text-sm font-semibold text-emerald-700">
@@ -156,7 +205,11 @@ export default function Admin() {
         <div className="glass-card rounded-[2rem] p-6 md:p-8">
           <div className="flex items-center gap-3">
             <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-slate-900 text-white">
-              {editingId ? <Pencil className="h-5 w-5" /> : <PlusCircle className="h-5 w-5" />}
+              {editingId ? (
+                <Pencil className="h-5 w-5" />
+              ) : (
+                <PlusCircle className="h-5 w-5" />
+              )}
             </div>
             <div>
               <h2 className="text-2xl font-bold text-slate-900">
@@ -231,18 +284,30 @@ export default function Admin() {
               </label>
             </div>
 
-            {(preview || form.imageFile) ? (
+            {preview ? (
               <div className="overflow-hidden rounded-3xl bg-slate-100">
-                <img src={preview || ""} alt="Preview" className="h-72 w-full object-cover" />
+                <img
+                  src={preview}
+                  alt="Preview"
+                  className="h-72 w-full object-cover"
+                />
               </div>
             ) : null}
 
             <div className="flex flex-col gap-3 sm:flex-row">
               <button className="btn-primary" disabled={saving}>
-                {saving ? "Đang lưu..." : editingId ? "Cập nhật sản phẩm" : "Thêm sản phẩm"}
+                {saving
+                  ? "Đang lưu..."
+                  : editingId
+                  ? "Cập nhật sản phẩm"
+                  : "Thêm sản phẩm"}
               </button>
               {editingId ? (
-                <button type="button" className="btn-secondary" onClick={resetForm}>
+                <button
+                  type="button"
+                  className="btn-secondary"
+                  onClick={resetForm}
+                >
                   Hủy chỉnh sửa
                 </button>
               ) : null}
@@ -262,10 +327,16 @@ export default function Admin() {
           </div>
 
           <div className="glass-card rounded-[2rem] p-6">
-            <h3 className="text-xl font-bold text-slate-900">Danh sách sản phẩm</h3>
+            <h3 className="text-xl font-bold text-slate-900">
+              Danh sách sản phẩm
+            </h3>
+
             <div className="mt-4 space-y-4">
               {filtered.map((product) => (
-                <div key={product.id} className="rounded-3xl border border-slate-100 bg-white p-4 shadow-sm">
+                <div
+                  key={product.id}
+                  className="rounded-3xl border border-slate-100 bg-white p-4 shadow-sm"
+                >
                   <div className="flex gap-4">
                     <img
                       src={product.imageUrl}
@@ -273,16 +344,28 @@ export default function Admin() {
                       className="h-20 w-20 rounded-2xl object-cover"
                     />
                     <div className="min-w-0 flex-1">
-                      <h4 className="truncate font-semibold text-slate-900">{product.name}</h4>
-                      <p className="mt-1 text-sm text-slate-500">{product.category || "Sữa rửa mặt"}</p>
-                      <p className="mt-2 text-sm font-bold text-sky-600">{formatCurrency(product.price)}</p>
+                      <h4 className="truncate font-semibold text-slate-900">
+                        {product.name}
+                      </h4>
+                      <p className="mt-1 text-sm text-slate-500">
+                        {product.category || "Sữa rửa mặt"}
+                      </p>
+                      <p className="mt-2 text-sm font-bold text-sky-600">
+                        {formatCurrency(product.price)}
+                      </p>
                     </div>
                   </div>
+
                   <p className="mt-3 line-clamp-2 text-sm leading-6 text-slate-600">
                     {product.shortDescription}
                   </p>
+
                   <div className="mt-4 flex gap-2">
-                    <button className="btn-secondary flex-1" onClick={() => startEdit(product)} type="button">
+                    <button
+                      className="btn-secondary flex-1"
+                      onClick={() => startEdit(product)}
+                      type="button"
+                    >
                       <Pencil className="h-4 w-4" />
                       Sửa
                     </button>
