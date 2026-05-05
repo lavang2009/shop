@@ -1,14 +1,24 @@
 import { useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { Link, NavLink } from "react-router-dom";
-import { Menu, X, ShoppingBag, ShieldCheck, UserCircle2, LogOut, ShoppingCart } from "lucide-react";
+import {
+  Menu,
+  X,
+  ShoppingBag,
+  ShieldCheck,
+  UserCircle2,
+  LogOut,
+  ShoppingCart,
+} from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import { useCart } from "../context/CartContext";
 
 const navLinkClass = ({ isActive }) =>
   [
     "rounded-2xl px-4 py-2 text-sm font-medium transition",
-    isActive ? "bg-slate-900 text-white" : "text-slate-600 hover:bg-slate-100 hover:text-slate-900",
+    isActive
+      ? "bg-slate-900 text-white"
+      : "text-slate-600 hover:bg-slate-100 hover:text-slate-900",
   ].join(" ");
 
 export default function Navbar() {
@@ -29,8 +39,12 @@ export default function Navbar() {
               <ShoppingBag className="h-5 w-5" />
             </div>
             <div>
-              <p className="text-sm font-semibold tracking-tight text-slate-900">FreshGlow Store</p>
-              <p className="text-xs text-slate-500">Sữa rửa mặt chuyên nghiệp</p>
+              <p className="text-sm font-semibold tracking-tight text-slate-900">
+                FreshGlow Store
+              </p>
+              <p className="text-xs text-slate-500">
+                Sữa rửa mặt chuyên nghiệp
+              </p>
             </div>
           </Link>
 
@@ -44,6 +58,7 @@ export default function Navbar() {
             <NavLink to="/categories" className={navLinkClass}>
               Bộ sưu tập
             </NavLink>
+
             {user ? (
               <>
                 <NavLink to="/cart" className={navLinkClass}>
@@ -55,21 +70,30 @@ export default function Navbar() {
                 <NavLink to="/profile" className={navLinkClass}>
                   Trang cá nhân
                 </NavLink>
+
                 {isStaff ? (
-                  <NavLink to="/admin" className={navLinkClass}>
-                    Trang quản trị
-                  </NavLink>
+                  <>
+                    <NavLink to="/admin" className={navLinkClass}>
+                      Trang quản trị
+                    </NavLink>
+                    <NavLink to="/admin/orders" className={navLinkClass}>
+                      Quản lý đơn hàng
+                    </NavLink>
+                  </>
                 ) : null}
+
                 {isStaff ? (
                   <span className="inline-flex items-center gap-2 rounded-2xl bg-emerald-50 px-4 py-2 text-sm font-semibold text-emerald-700">
                     <ShieldCheck className="h-4 w-4" />
                     {role.toUpperCase()}
                   </span>
                 ) : null}
+
                 <span className="inline-flex items-center gap-2 rounded-2xl bg-slate-100 px-4 py-2 text-sm font-medium text-slate-700">
                   <UserCircle2 className="h-4 w-4" />
                   {profile?.displayName || user.displayName || "Người dùng"}
                 </span>
+
                 <button onClick={logout} className="btn-secondary">
                   <LogOut className="h-4 w-4" />
                   Đăng xuất
@@ -92,7 +116,10 @@ export default function Navbar() {
               <ShoppingCart className="h-4 w-4" />
               <span className="text-xs">{itemCount}</span>
             </NavLink>
-            <button className="btn-secondary !px-3 !py-2" onClick={() => setOpen((value) => !value)}>
+            <button
+              className="btn-secondary !px-3 !py-2"
+              onClick={() => setOpen((value) => !value)}
+            >
               {open ? <X className="h-4 w-4" /> : <Menu className="h-4 w-4" />}
             </button>
           </div>
@@ -118,26 +145,59 @@ export default function Navbar() {
                   ["/faq", "FAQ"],
                   ["/policies", "Chính sách"],
                 ].map(([to, label]) => (
-                  <NavLink key={to} to={to} onClick={closeMenu} className={navLinkClass}>
+                  <NavLink
+                    key={to}
+                    to={to}
+                    onClick={closeMenu}
+                    className={navLinkClass}
+                  >
                     {label}
                   </NavLink>
                 ))}
+
                 {user ? (
                   <>
-                    <NavLink to="/profile" onClick={closeMenu} className={navLinkClass}>
+                    <NavLink
+                      to="/profile"
+                      onClick={closeMenu}
+                      className={navLinkClass}
+                    >
                       Trang cá nhân
                     </NavLink>
-                    <NavLink to="/cart" onClick={closeMenu} className={navLinkClass}>
+                    <NavLink
+                      to="/cart"
+                      onClick={closeMenu}
+                      className={navLinkClass}
+                    >
                       Giỏ hàng
                     </NavLink>
-                    <NavLink to="/orders" onClick={closeMenu} className={navLinkClass}>
+                    <NavLink
+                      to="/orders"
+                      onClick={closeMenu}
+                      className={navLinkClass}
+                    >
                       Đơn hàng
                     </NavLink>
+
                     {isStaff ? (
-                      <NavLink to="/admin" onClick={closeMenu} className={navLinkClass}>
-                        Trang quản trị
-                      </NavLink>
+                      <>
+                        <NavLink
+                          to="/admin"
+                          onClick={closeMenu}
+                          className={navLinkClass}
+                        >
+                          Trang quản trị
+                        </NavLink>
+                        <NavLink
+                          to="/admin/orders"
+                          onClick={closeMenu}
+                          className={navLinkClass}
+                        >
+                          Quản lý đơn hàng
+                        </NavLink>
+                      </>
                     ) : null}
+
                     <button
                       onClick={async () => {
                         closeMenu();
@@ -151,10 +211,18 @@ export default function Navbar() {
                   </>
                 ) : (
                   <>
-                    <NavLink to="/login" onClick={closeMenu} className={navLinkClass}>
+                    <NavLink
+                      to="/login"
+                      onClick={closeMenu}
+                      className={navLinkClass}
+                    >
                       Đăng nhập
                     </NavLink>
-                    <NavLink to="/register" onClick={closeMenu} className={navLinkClass}>
+                    <NavLink
+                      to="/register"
+                      onClick={closeMenu}
+                      className={navLinkClass}
+                    >
                       Đăng ký
                     </NavLink>
                   </>
