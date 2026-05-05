@@ -1,12 +1,13 @@
 import { useEffect, useState } from "react";
-import { collection, onSnapshot, query, where, orderBy } from "firebase/firestore";
-import { Package2, MapPin, Phone, Clock3 } from "lucide-react";
+import { collection, onSnapshot, query, where } from "firebase/firestore";
+import { MapPin, Phone, Clock3 } from "lucide-react";
 import SectionHeader from "../components/SectionHeader";
 import EmptyState from "../components/EmptyState";
+import OrderCard from "../components/OrderCard";
 import LoadingScreen from "../components/LoadingScreen";
 import { useAuth } from "../context/AuthContext";
 import { db } from "../firebase/firebase";
-import { formatCurrency, formatDate } from "../utils/format";
+import { formatDate } from "../utils/format";
 
 export default function Orders() {
   const { profile } = useAuth();
@@ -21,24 +22,28 @@ export default function Orders() {
 
     const q = query(
       collection(db, "orders"),
-      where("userId", "==", profile.uid),
-      orderBy("createdAt", "desc")
+      where("userId", "==", profile.uid)
     );
 
     const unsubscribe = onSnapshot(
       q,
       (snapshot) => {
-        const list = snapshot.docs.map((doc) => ({
-          id: doc.id,
-          ...doc.data(),
+        const list = snapshot.docs.map((item) => ({
+          id: item.id,
+          ...item.data(),
         }));
+
+        // ✅ sort local (tránh lỗi index)
+        list.sort(
+          (a, b) =>
+            Number(b.createdAt?.seconds || 0) -
+            Number(a.createdAt?.seconds || 0)
+        );
+
         setOrders(list);
         setLoading(false);
       },
-      (error) => {
-        console.error(error);
-        setLoading(false);
-      }
+      () => setLoading(false)
     );
 
     return unsubscribe;
@@ -49,7 +54,7 @@ export default function Orders() {
       <SectionHeader
         eyebrow="Theo dõi"
         title="Đơn hàng của bạn"
-        subtitle="Theo dõi trạng thái và thông tin chi tiết đơn hàng."
+        subtitle="Danh sách đơn đặt hàng và thông tin chi tiết."
       />
 
       <div className="mt-8">
@@ -58,53 +63,42 @@ export default function Orders() {
         ) : orders.length ? (
           <div className="space-y-6">
             {orders.map((order) => {
-              const items = Array.isArray(order.items) ? order.items : [];
               const status = order.status || "pending";
 
               return (
-                <div
-                  key={order.id}
-                  className="glass-card rounded-[2rem] p-6"
-                >
-                  {/* Header */}
-                  <div className="flex flex-col gap-4 md:flex-row md:justify-between">
-                    <div>
-                      <h3 className="text-xl font-bold text-slate-900">
-                        Mã đơn: {order.id}
-                      </h3>
+                <div key={order.id} className="space-y-3">
+                  
+                  {/* ✅ Thông tin thêm (KHÔNG phá OrderCard) */}
+                  <div className="rounded-2xl bg-slate-50 p-4 text-sm text-slate-600">
+                    <p>
+                      <Clock3 className="inline mr-1 h-4 w-4" />
+                      {formatDate(order.createdAt) || "—"}
+                    </p>
 
-                      <p className="mt-2 text-sm text-slate-500">
-                        <Clock3 className="inline mr-1 h-4 w-4" />
-                        {formatDate(order.createdAt) || "—"}
-                      </p>
+                    <p>
+                      <Phone className="inline mr-1 h-4 w-4" />
+                      {order.phone || profile?.phoneNumber || "Chưa có SĐT"}
+                    </p>
 
-                      <p className="mt-1 text-sm text-slate-500">
-                        <Phone className="inline mr-1 h-4 w-4" />
-                        {order.phone || profile?.phoneNumber || "Chưa có SĐT"}
-                      </p>
+                    <p>
+                      <MapPin className="inline mr-1 h-4 w-4" />
+                      {order.address || "Chưa có địa chỉ"}
+                    </p>
 
-                      <p className="mt-1 text-sm text-slate-500">
-                        <MapPin className="inline mr-1 h-4 w-4" />
-                        {order.address || "Chưa có địa chỉ"}
-                      </p>
+                    {order.note && (
+                      <p>Ghi chú: {order.note}</p>
+                    )}
 
-                      {order.note && (
-                        <p className="mt-1 text-sm text-slate-500">
-                          Ghi chú: {order.note}
-                        </p>
-                      )}
-                    </div>
-
-                    {/* Status + total */}
-                    <div className="text-right">
+                    <p className="mt-2 font-semibold">
+                      Trạng thái:{" "}
                       <span
-                        className={`inline-block rounded-full px-3 py-1 text-xs font-semibold ${
+                        className={
                           status === "confirmed"
-                            ? "bg-emerald-50 text-emerald-700"
+                            ? "text-emerald-600"
                             : status === "cancelled"
-                            ? "bg-rose-50 text-rose-700"
-                            : "bg-amber-50 text-amber-700"
-                        }`}
+                            ? "text-rose-600"
+                            : "text-amber-600"
+                        }
                       >
                         {status === "confirmed"
                           ? "Đã xác nhận"
@@ -112,40 +106,11 @@ export default function Orders() {
                           ? "Đã hủy"
                           : "Chờ xác nhận"}
                       </span>
-
-                      <p className="mt-3 text-2xl font-black text-sky-600">
-                        {formatCurrency(order.total || 0)}
-                      </p>
-                    </div>
+                    </p>
                   </div>
 
-                  {/* Items */}
-                  <div className="mt-6 space-y-3">
-                    {items.map((item, index) => (
-                      <div
-                        key={index}
-                        className="flex items-center justify-between rounded-2xl bg-white px-4 py-3 shadow-sm"
-                      >
-                        <div className="flex items-center gap-3">
-                          <Package2 className="h-4 w-4 text-slate-500" />
-                          <div>
-                            <p className="font-semibold text-slate-900">
-                              {item.name}
-                            </p>
-                            <p className="text-sm text-slate-500">
-                              SL: {item.quantity || 1}
-                            </p>
-                          </div>
-                        </div>
-
-                        <p className="font-semibold text-slate-700">
-                          {formatCurrency(
-                            (item.price || 0) * (item.quantity || 1)
-                          )}
-                        </p>
-                      </div>
-                    ))}
-                  </div>
+                  {/* ✅ Giữ nguyên component cũ */}
+                  <OrderCard order={order} />
                 </div>
               );
             })}
@@ -153,7 +118,7 @@ export default function Orders() {
         ) : (
           <EmptyState
             title="Chưa có đơn hàng nào"
-            description="Sau khi mua hàng, đơn sẽ xuất hiện tại đây."
+            description="Sau khi checkout, đơn hàng sẽ xuất hiện ở đây."
             actionLabel="Đi mua sắm"
             actionTo="/products"
           />
