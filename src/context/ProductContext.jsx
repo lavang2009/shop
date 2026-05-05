@@ -12,9 +12,9 @@ import {
   serverTimestamp,
   updateDoc,
 } from "firebase/firestore";
-import { deleteObject, getDownloadURL, ref, uploadBytes } from "firebase/storage";
-import { db, storage } from "../firebase/firebase";
+import { db } from "../firebase/firebase";
 import { useAuth } from "./AuthContext";
+import { uploadImage } from "../services/uploadImage";
 
 const ProductContext = createContext(null);
 
@@ -25,6 +25,7 @@ export function ProductProvider({ children }) {
 
   useEffect(() => {
     const q = query(collection(db, "products"), orderBy("createdAt", "desc"));
+
     const unsubscribe = onSnapshot(
       q,
       (snapshot) => {
@@ -38,38 +39,34 @@ export function ProductProvider({ children }) {
       }
     );
 
-    return unsubscribe;
+    return () => unsubscribe();
   }, []);
 
   const canManageProducts = ["admin", "seller"].includes(profile?.role || "");
-
-  const uploadImage = async (file) => {
-    if (!file) return { imageUrl: "", imagePath: "" };
-    const path = `products/${Date.now()}-${file.name}`;
-    const storageRef = ref(storage, path);
-    await uploadBytes(storageRef, file);
-    const imageUrl = await getDownloadURL(storageRef);
-    return { imageUrl, imagePath: path };
-  };
 
   const addProduct = async (data) => {
     if (!canManageProducts) {
       throw new Error("Bạn không có quyền thêm sản phẩm.");
     }
 
-    const uploaded = data.imageFile ? await uploadImage(data.imageFile) : { imageUrl: "", imagePath: "" };
+    let imageUrl = data.imageUrl || "";
+
+    if (data.imageFile) {
+      imageUrl = await uploadImage(data.imageFile);
+    }
+
     const payload = {
-      name: data.name,
-      price: Number(data.price),
-      shortDescription: data.shortDescription || "",
-      description: data.description || "",
-      category: data.category || "Sữa rửa mặt",
-      imageUrl: uploaded.imageUrl || data.imageUrl || "",
-      imagePath: uploaded.imagePath || data.imagePath || "",
+      name: data.name?.trim() || "",
+      price: Number(data.price || 0),
+      shortDescription: data.shortDescription?.trim() || "",
+      description: data.description?.trim() || "",
+      category: data.category?.trim() || "Sữa rửa mặt",
+      imageUrl,
       createdAt: serverTimestamp(),
       updatedAt: serverTimestamp(),
       authorId: profile?.uid || "",
       authorName: profile?.displayName || "",
+      authorRole: profile?.role || "customer",
     };
 
     const docRef = await addDoc(collection(db, "products"), payload);
@@ -84,32 +81,28 @@ export function ProductProvider({ children }) {
 
     const refDoc = doc(db, "products", id);
     const current = await getDoc(refDoc);
-    const currentData = current.exists() ? current.data() : {};
+
+    if (!current.exists()) {
+      throw new Error("Không tìm thấy sản phẩm để cập nhật.");
+    }
+
+    const currentData = current.data();
 
     let imageUrl = currentData.imageUrl || "";
-    let imagePath = currentData.imagePath || "";
 
     if (data.imageFile) {
-      if (imagePath) {
-        try {
-          await deleteObject(ref(storage, imagePath));
-        } catch (error) {
-          console.warn("Không xóa được ảnh cũ:", error);
-        }
-      }
-      const uploaded = await uploadImage(data.imageFile);
-      imageUrl = uploaded.imageUrl;
-      imagePath = uploaded.imagePath;
+      imageUrl = await uploadImage(data.imageFile);
+    } else if (data.imageUrl) {
+      imageUrl = data.imageUrl;
     }
 
     const payload = {
-      name: data.name,
-      price: Number(data.price),
-      shortDescription: data.shortDescription || "",
-      description: data.description || "",
-      category: data.category || "Sữa rửa mặt",
+      name: data.name?.trim() || "",
+      price: Number(data.price || 0),
+      shortDescription: data.shortDescription?.trim() || "",
+      description: data.description?.trim() || "",
+      category: data.category?.trim() || "Sữa rửa mặt",
       imageUrl,
-      imagePath,
       updatedAt: serverTimestamp(),
     };
 
@@ -122,19 +115,7 @@ export function ProductProvider({ children }) {
       throw new Error("Bạn không có quyền xóa sản phẩm.");
     }
 
-    const refDoc = doc(db, "products", id);
-    const snap = await getDoc(refDoc);
-    if (snap.exists()) {
-      const data = snap.data();
-      if (data?.imagePath) {
-        try {
-          await deleteObject(ref(storage, data.imagePath));
-        } catch (error) {
-          console.warn("Không xóa được ảnh trên Storage:", error);
-        }
-      }
-      await deleteDoc(refDoc);
-    }
+    await deleteDoc(doc(db, "products", id));
     toast.success("Đã xóa sản phẩm.");
   };
 
@@ -154,7 +135,6 @@ export function ProductProvider({ children }) {
       products,
       loading,
       canManageProducts,
-      uploadImage,
       addProduct,
       updateProduct,
       removeProduct,
