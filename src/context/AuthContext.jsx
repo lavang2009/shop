@@ -17,16 +17,26 @@ export async function upsertUserProfile(user, extra = {}) {
 
   const userRef = doc(db, "users", user.uid);
   const snap = await getDoc(userRef);
-  const { role: extraRole, ...rest } = extra;
+
+  const {
+    role: extraRole,
+    createdAt: _createdAt,
+    updatedAt: _updatedAt,
+    uid: _uid,
+    ...rest
+  } = extra;
+
+  const currentRole = snap.exists() ? snap.data()?.role : null;
+
   const payload = {
     uid: user.uid,
     email: user.email || rest.email || "",
     phoneNumber: user.phoneNumber || rest.phoneNumber || "",
     displayName: user.displayName || rest.displayName || "",
     photoURL: user.photoURL || rest.photoURL || "",
+    role: currentRole || extraRole || "customer",
     updatedAt: serverTimestamp(),
     ...rest,
-    role: snap.exists() ? snap.data()?.role || extraRole || "customer" : extraRole || "customer",
   };
 
   if (!snap.exists()) {
@@ -48,82 +58,117 @@ export function AuthProvider({ children }) {
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
-      setUser(firebaseUser || null);
+      try {
+        setUser(firebaseUser || null);
 
-      if (firebaseUser) {
-        try {
-          const snap = await getDoc(doc(db, "users", firebaseUser.uid));
-          if (snap.exists()) {
-            setProfile(snap.data());
-          } else {
-            const created = await upsertUserProfile(firebaseUser, {
-              displayName: firebaseUser.displayName || "Người dùng",
-              email: firebaseUser.email || "",
-              phoneNumber: firebaseUser.phoneNumber || "",
-              role: "customer",
-            });
-            setProfile(created);
-          }
-        } catch (error) {
-          console.error(error);
-          toast.error("Không tải được hồ sơ người dùng.");
+        if (!firebaseUser) {
           setProfile(null);
+          return;
         }
-      } else {
-        setProfile(null);
-      }
 
-      setLoading(false);
+        const snap = await getDoc(doc(db, "users", firebaseUser.uid));
+
+        if (snap.exists()) {
+          setProfile(snap.data());
+        } else {
+          const created = await upsertUserProfile(firebaseUser, {
+            displayName: firebaseUser.displayName || "Người dùng",
+            email: firebaseUser.email || "",
+            phoneNumber: firebaseUser.phoneNumber || "",
+            role: "customer",
+          });
+          setProfile(created);
+        }
+      } catch (error) {
+        console.error(error);
+        toast.error("Không tải được hồ sơ người dùng.");
+        setProfile(null);
+      } finally {
+        setLoading(false);
+      }
     });
 
-    return unsubscribe;
+    return () => unsubscribe();
   }, []);
 
-  const registerWithEmail = async ({ displayName, email, password, phoneNumber }) => {
-    const credential = await createUserWithEmailAndPassword(auth, email, password);
-    await updateProfile(credential.user, { displayName });
+  const registerWithEmail = async ({
+    displayName,
+    email,
+    password,
+    phoneNumber,
+  }) => {
+    const cleanName = (displayName || "").trim();
+    const cleanEmail = (email || "").trim();
+
+    const credential = await createUserWithEmailAndPassword(
+      auth,
+      cleanEmail,
+      password
+    );
+
+    await updateProfile(credential.user, {
+      displayName: cleanName,
+    });
+
     const payload = await upsertUserProfile(credential.user, {
-      displayName,
-      email,
+      displayName: cleanName,
+      email: cleanEmail,
       phoneNumber: phoneNumber || "",
       role: "customer",
     });
+
     setProfile(payload);
     return credential.user;
   };
 
   const loginWithEmail = async ({ email, password }) => {
-    const credential = await signInWithEmailAndPassword(auth, email, password);
+    const credential = await signInWithEmailAndPassword(
+      auth,
+      email.trim(),
+      password
+    );
     return credential.user;
   };
 
   const saveProfile = async (extra = {}) => {
     if (!auth.currentUser) return null;
+
+    const nextDisplayName =
+      extra.displayName?.trim() || auth.currentUser.displayName || "";
+
     if (extra.displayName) {
-      await updateProfile(auth.currentUser, { displayName: extra.displayName });
+      await updateProfile(auth.currentUser, {
+        displayName: nextDisplayName,
+      });
     }
+
     const payload = await upsertUserProfile(auth.currentUser, {
-      displayName: extra.displayName || auth.currentUser.displayName || "",
+      displayName: nextDisplayName,
       email: auth.currentUser.email || "",
       phoneNumber: auth.currentUser.phoneNumber || "",
       ...extra,
     });
+
     setProfile(payload);
     return payload;
   };
 
   const refreshProfile = async () => {
     if (!auth.currentUser) return null;
+
     const snap = await getDoc(doc(db, "users", auth.currentUser.uid));
     if (snap.exists()) {
       setProfile(snap.data());
       return snap.data();
     }
+
     return null;
   };
 
   const logout = async () => {
     await signOut(auth);
+    setUser(null);
+    setProfile(null);
     toast.success("Đã đăng xuất.");
   };
 
@@ -145,4 +190,10 @@ export function AuthProvider({ children }) {
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
 
-export const useAuth = () => useContext(AuthContext);
+export const useAuth = () => {
+  const ctx = useContext(AuthContext);
+  if (!ctx) {
+    throw new Error("useAuth phải được dùng bên trong AuthProvider");
+  }
+  return ctx;
+};
