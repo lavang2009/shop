@@ -17,7 +17,7 @@ export default function Footer() {
           <div>
             <p className="text-lg font-bold text-slate-900">FreshGlow Store</p>
             <p className="mt-3 text-sm leading-7 text-slate-500">
-              Website bán sữa rửa mặt theo phong cách hiện đại, responsive và dễ mở rộng.
+              Chuyên cung cấp các dòng sữa rửa mặt chính hãng, an toàn và phù hợp với mọi loại da.
             </p>
           </div>
           <div>
@@ -39,19 +39,19 @@ export default function Footer() {
             </div>
           </div>
           <div>
-            <p className="text-sm font-semibold uppercase tracking-[0.18em] text-slate-400">Công nghệ</p>
+            <p className="text-sm font-semibold uppercase tracking-[0.18em] text-slate-400">Cam kết</p>
             <p className="mt-4 text-sm leading-7 text-slate-600">
-              React + Firebase + TailwindCSS, hỗ trợ deploy Vercel và phân quyền seller/admin.
+              Cung cấp sản phẩm làm đẹp chính hãng, mang đến trải nghiệm mua sắm an toàn và tin cậy cho khách hàng.
             </p>
           </div>
         </div>
 
         <div className="mt-8 flex flex-col items-center justify-between gap-3 border-t border-slate-200 pt-6 text-center sm:flex-row sm:text-left">
           <p className="text-sm text-slate-500">
-            © {new Date().getFullYear()} FreshGlow Store.
+            © {new Date().getFullYear()} FreshGlow Store. Tất cả quyền được bảo lưu.
           </p>
           <p className="inline-flex items-center gap-2 text-sm text-slate-500">
-            Làm bằng <Heart className="h-4 w-4 text-rose-500" /> với React + Firebase
+            Làm bằng <Heart className="h-4 w-4 text-rose-500" /> vì vẻ đẹp của bạn
           </p>
         </div>
       </div>
