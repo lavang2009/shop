@@ -1,6 +1,6 @@
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
-import { ArrowRight, BadgeCheck, Flame, Sparkles } from "lucide-react";
+import { ArrowRight, ShieldCheck, Truck, Sparkles, Leaf, Droplet, HeartHandshake } from "lucide-react";
 import SectionHero from "../components/SectionHero";
 import ProductGrid from "../components/ProductGrid";
 import LoadingScreen from "../components/LoadingScreen";
@@ -20,34 +20,34 @@ export default function Home() {
 
       <section className="section-shell py-16">
         <SectionHeader
-          eyebrow="Tổng quan"
-          title="Sân chơi bán hàng gọn gàng, đẹp và dễ mở rộng"
-          subtitle="Bản này giữ phong cách bắt mắt của phiên bản đầu, đồng thời thêm nhiều trang hữu ích hơn cho shop thực tế."
+          eyebrow="Đồng hành cùng bạn"
+          title="Chăm sóc làn da mỗi ngày"
+          subtitle="Khám phá các dòng sữa rửa mặt chính hãng, an toàn và phù hợp với mọi loại da để mang lại vẻ rạng rỡ tự nhiên."
           action={<Link to="/about" className="btn-secondary">Tìm hiểu thêm <ArrowRight className="h-4 w-4" /></Link>}
         />
 
         <div className="mt-8 grid gap-4 md:grid-cols-3">
-          <StatCard label="Tính năng" value="Frontend + Backend" hint="React + Firebase" />
-          <StatCard label="Bảo mật" value="Role-based" hint="seller / admin" />
-          <StatCard label="Hiển thị" value="Responsive" hint="Mobile / Desktop" />
+          <StatCard label="Cam kết" value="Chính hãng 100%" hint="Nguồn gốc rõ ràng" />
+          <StatCard label="Thanh toán" value="Bảo mật an toàn" hint="Đa dạng phương thức" />
+          <StatCard label="Vận chuyển" value="Giao hàng tốc hành" hint="Phủ sóng toàn quốc" />
         </div>
 
         <div className="mt-10 grid gap-4 lg:grid-cols-3">
           {[
             {
-              icon: Sparkles,
-              title: "Hiệu ứng mượt",
-              desc: "Dùng framer-motion cho hover, transition và loading state.",
+              icon: Droplet,
+              title: "Làm sạch chuyên sâu",
+              desc: "Nhẹ nhàng lấy đi bụi bẩn, bã nhờn và lớp trang điểm mà không làm khô căng da.",
             },
             {
-              icon: BadgeCheck,
-              title: "Trang cá nhân",
-              desc: "Người dùng có profile riêng, hiển thị vai trò và thông tin tài khoản.",
+              icon: Leaf,
+              title: "Thành phần tự nhiên",
+              desc: "Chiết xuất lành tính, an toàn và thân thiện với cả những làn da nhạy cảm nhất.",
             },
             {
-              icon: Flame,
-              title: "Mở rộng nhanh",
-              desc: "Có sẵn cart, checkout, orders, FAQ, policies và contact.",
+              icon: HeartHandshake,
+              title: "Chăm sóc tận tâm",
+              desc: "Đội ngũ chuyên viên luôn sẵn sàng tư vấn lộ trình chăm sóc da phù hợp cho riêng bạn.",
             },
           ].map((item) => (
             <motion.div key={item.title} className="glass-card rounded-3xl p-6" whileHover={{ y: -4 }}>
@@ -62,8 +62,8 @@ export default function Home() {
       <section className="section-shell pb-2">
         <SectionHeader
           eyebrow="Bộ sưu tập"
-          title="Gợi ý theo nhu cầu da"
-          subtitle="Không seed sản phẩm giả. Phần này giúp khách định hướng nhanh trước khi seller thêm hàng thật."
+          title="Lựa chọn theo tình trạng da"
+          subtitle="Tìm kiếm sản phẩm tối ưu nhất được phân loại dựa trên nhu cầu riêng biệt của làn da bạn."
         />
         <div className="mt-8 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
           {categoryCards.map((card) => (
@@ -78,10 +78,10 @@ export default function Home() {
 
       <section className="section-shell py-16">
         <SectionHeader
-          eyebrow="Sản phẩm mới"
-          title="Khu vực trưng bày sản phẩm thật"
-          subtitle="Nếu Firestore đang trống, hệ thống sẽ hiện trạng thái trống thay vì dùng dữ liệu giả."
-          action={<Link to="/products" className="btn-secondary">Xem toàn bộ <ArrowRight className="h-4 w-4" /></Link>}
+          eyebrow="Thịnh hành"
+          title="Sản phẩm nổi bật"
+          subtitle="Những dòng sữa rửa mặt đang được yêu thích và bán chạy nhất tại cửa hàng."
+          action={<Link to="/products" className="btn-secondary">Xem tất cả <ArrowRight className="h-4 w-4" /></Link>}
         />
         <div className="mt-8">
           {loading ? (
@@ -90,10 +90,10 @@ export default function Home() {
             <ProductGrid products={featured} />
           ) : (
             <EmptyState
-              title="Chưa có sản phẩm nào"
-              description="Seller/admin có thể vào trang quản trị để thêm sản phẩm thật, upload ảnh và công bố lên shop."
-              actionLabel="Đi tới quản trị"
-              actionTo="/admin"
+              title="Sản phẩm đang được cập nhật"
+              description="Các mặt hàng mới nhất đang được chúng tôi đưa lên kệ. Vui lòng quay lại sau nhé!"
+              actionLabel="Xem danh mục khác"
+              actionTo="/categories"
             />
           )}
         </div>
@@ -103,16 +103,16 @@ export default function Home() {
         <div className="grid gap-6 lg:grid-cols-2">
           <div className="soft-panel p-6 md:p-8">
             <SectionHeader
-              eyebrow="Lộ trình"
-              title="Luồng sử dụng rõ ràng"
-              subtitle="Từ đăng ký, đăng nhập, xem sản phẩm đến giỏ hàng và đơn hàng đều có sẵn trong project."
+              eyebrow="Trải nghiệm"
+              title="Mua sắm dễ dàng"
+              subtitle="Quy trình đặt hàng đơn giản, tiện lợi giúp bạn sở hữu sản phẩm nhanh chóng."
             />
             <div className="mt-6 grid gap-4 sm:grid-cols-2">
               {[
-                "Đăng ký tài khoản mới",
-                "Đăng nhập và xem hồ sơ",
-                "Seller/admin quản lý sản phẩm",
-                "Khách tạo đơn qua giỏ hàng",
+                "1. Tìm kiếm và chọn sản phẩm",
+                "2. Thêm vào giỏ hàng của bạn",
+                "3. Điền thông tin giao hàng",
+                "4. Nhận hàng và thanh toán",
               ].map((item) => (
                 <div key={item} className="rounded-3xl bg-white p-4 text-sm font-medium text-slate-700 shadow-sm ring-1 ring-slate-100">
                   {item}
@@ -123,9 +123,9 @@ export default function Home() {
 
           <div className="soft-panel p-6 md:p-8">
             <SectionHeader
-              eyebrow="FAQ nhanh"
-              title="Những điểm người dùng hay hỏi"
-              subtitle="Phần trả lời ngắn giúp web trông trọn vẹn hơn và giảm băn khoăn khi sử dụng."
+              eyebrow="Hỗ trợ khách hàng"
+              title="Câu hỏi thường gặp"
+              subtitle="Giải đáp nhanh chóng các thắc mắc phổ biến của khách hàng trong quá trình mua sắm."
             />
             <div className="mt-6 space-y-4">
               {faqs.slice(0, 3).map((item) => (
