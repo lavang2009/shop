@@ -58,6 +58,9 @@ export function ProductProvider({ children }) {
     const payload = {
       name: data.name?.trim() || "",
       price: Number(data.price || 0),
+      stock: Number(data.stock || 0), // Thêm số lượng kho
+      rating: 0, // Mặc định 0 sao
+      reviewCount: 0, // Mặc định 0 đánh giá
       shortDescription: data.shortDescription?.trim() || "",
       description: data.description?.trim() || "",
       category: data.category?.trim() || "Sữa rửa mặt",
@@ -99,6 +102,7 @@ export function ProductProvider({ children }) {
     const payload = {
       name: data.name?.trim() || "",
       price: Number(data.price || 0),
+      stock: Number(data.stock || 0), // Cập nhật số lượng kho
       shortDescription: data.shortDescription?.trim() || "",
       description: data.description?.trim() || "",
       category: data.category?.trim() || "Sữa rửa mặt",
@@ -130,6 +134,42 @@ export function ProductProvider({ children }) {
   const getRelatedProducts = (currentId, limit = 4) =>
     products.filter((item) => item.id !== currentId).slice(0, limit);
 
+  // 🔥 HÀM MỚI: Gửi đánh giá và tính lại sao trung bình
+  const submitReview = async (productId, ratingScore, commentText) => {
+    if (!profile) throw new Error("Vui lòng đăng nhập để đánh giá.");
+
+    const productRef = doc(db, "products", productId);
+    const productSnap = await getDoc(productRef);
+    
+    if (!productSnap.exists()) throw new Error("Sản phẩm không tồn tại.");
+    
+    const productData = productSnap.data();
+    const currentCount = productData.reviewCount || 0;
+    const currentRating = productData.rating || 0;
+
+    // Tính điểm trung bình mới
+    const newCount = currentCount + 1;
+    const newRating = ((currentRating * currentCount) + ratingScore) / newCount;
+
+    // 1. Lưu đánh giá
+    await addDoc(collection(db, "reviews"), {
+      productId,
+      userId: profile.uid,
+      userName: profile.displayName || "Người dùng",
+      rating: ratingScore,
+      comment: commentText.trim(),
+      createdAt: serverTimestamp()
+    });
+
+    // 2. Cập nhật lại số sao của sản phẩm
+    await updateDoc(productRef, {
+      rating: newRating,
+      reviewCount: newCount
+    });
+
+    toast.success("Cảm ơn bạn đã gửi đánh giá!");
+  };
+
   const value = useMemo(
     () => ({
       products,
@@ -140,6 +180,7 @@ export function ProductProvider({ children }) {
       removeProduct,
       getProductById,
       getRelatedProducts,
+      submitReview, // Xuất hàm mới ra
     }),
     [products, loading, canManageProducts]
   );
