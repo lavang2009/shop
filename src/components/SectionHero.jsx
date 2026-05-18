@@ -21,8 +21,7 @@ export default function SectionHero() {
               <span className="block text-sky-600">chăm da thông minh.</span>
             </h1>
             <p className="mt-5 max-w-xl text-base leading-8 text-slate-600 md:text-lg">
-              Giao diện hiện đại, quản trị sản phẩm bằng Firebase và hệ thống phân quyền seller/admin
-              rõ ràng. Dễ mở rộng cho cửa hàng online thực tế.
+              Mang đến giải pháp chăm sóc da toàn diện với các dòng sản phẩm chính hãng, an toàn và phù hợp với mọi loại da. Khởi đầu chu trình skincare hoàn hảo của bạn ngay hôm nay.
             </p>
 
             <div className="mt-8 flex flex-col gap-3 sm:flex-row">
@@ -36,9 +35,9 @@ export default function SectionHero() {
 
             <div className="mt-8 grid gap-3 sm:grid-cols-3">
               {[
-                { icon: ShieldCheck, title: "Auth bảo mật", desc: "Firebase Authentication" },
-                { icon: Truck, title: "Quản lý dễ", desc: "CRUD sản phẩm nhanh" },
-                { icon: Sparkles, title: "UI đẹp", desc: "Responsive + animation" },
+                { icon: ShieldCheck, title: "Chính hãng", desc: "Cam kết 100%" },
+                { icon: Truck, title: "Giao hàng", desc: "Nhanh chóng toàn quốc" },
+                { icon: Sparkles, title: "Đổi trả", desc: "Dễ dàng trong 7 ngày" },
               ].map((item) => (
                 <div key={item.title} className="glass-card rounded-3xl p-4">
                   <item.icon className="h-5 w-5 text-sky-600" />
@@ -67,16 +66,16 @@ export default function SectionHero() {
               <div className="grid gap-4">
                 <div className="glass-card rounded-[2rem] p-6">
                   <p className="text-sm font-medium text-slate-500">Hiệu quả</p>
-                  <p className="mt-2 text-3xl font-black text-slate-900">Sạch thoáng</p>
+                  <p className="mt-2 text-3xl font-black text-slate-900">Sạch sâu</p>
                   <p className="mt-2 text-sm text-slate-600">
-                    Cards sản phẩm sinh động, tối ưu cho mobile và desktop.
+                    Lấy đi bụi bẩn, bã nhờn mà không làm khô căng da.
                   </p>
                 </div>
                 <div className="glass-card rounded-[2rem] p-6">
-                  <p className="text-sm font-medium text-slate-500">Back-end</p>
-                  <p className="mt-2 text-3xl font-black text-slate-900">Firebase</p>
+                  <p className="text-sm font-medium text-slate-500">Thành phần</p>
+                  <p className="mt-2 text-3xl font-black text-slate-900">An toàn</p>
                   <p className="mt-2 text-sm text-slate-600">
-                    Auth, Firestore, Storage, Rules, Role-based access.
+                    Chiết xuất thiên nhiên, lành tính với cả da nhạy cảm.
                   </p>
                 </div>
               </div>
