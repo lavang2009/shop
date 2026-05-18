@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { Pencil, Trash2, Upload, PlusCircle, ShieldCheck } from "lucide-react";
+import { Pencil, Trash2, Upload, PlusCircle, ShieldCheck, Package } from "lucide-react";
 import toast from "react-hot-toast";
 import { useAuth } from "../context/AuthContext";
 import { useProducts } from "../context/ProductContext";
@@ -10,6 +10,7 @@ import { uploadImage } from "../services/uploadImage";
 const initialForm = {
   name: "",
   price: "",
+  stock: "", // Thêm trường số lượng
   category: "Sữa rửa mặt",
   shortDescription: "",
   description: "",
@@ -87,6 +88,7 @@ export default function Admin() {
     setForm({
       name: product.name || "",
       price: product.price || "",
+      stock: product.stock !== undefined ? product.stock : "", // Lấy số lượng khi sửa
       category: product.category || "Sữa rửa mặt",
       shortDescription: product.shortDescription || "",
       description: product.description || "",
@@ -102,6 +104,9 @@ export default function Admin() {
     if (!form.name.trim()) return toast.error("Vui lòng nhập tên sản phẩm.");
     if (!form.price || Number(form.price) <= 0) {
       return toast.error("Giá phải lớn hơn 0.");
+    }
+    if (form.stock === "" || Number(form.stock) < 0) {
+      return toast.error("Số lượng không hợp lệ.");
     }
     if (!form.description.trim()) {
       return toast.error("Vui lòng nhập mô tả chi tiết.");
@@ -121,6 +126,7 @@ export default function Admin() {
       const payload = {
         name: form.name.trim(),
         price: Number(form.price),
+        stock: Number(form.stock), // Đẩy số lượng lên Context
         category: form.category.trim() || "Sữa rửa mặt",
         shortDescription: form.shortDescription.trim(),
         description: form.description.trim(),
@@ -222,7 +228,7 @@ export default function Admin() {
           </div>
 
           <form className="mt-6 grid gap-5" onSubmit={handleSubmit}>
-            <div className="grid gap-5 md:grid-cols-2">
+            <div className="grid gap-5 md:grid-cols-3">
               <div>
                 <label className="label-text">Tên sản phẩm</label>
                 <input
@@ -238,6 +244,15 @@ export default function Admin() {
                   className="input-field"
                   value={form.price}
                   onChange={(e) => handleChange("price", e.target.value)}
+                />
+              </div>
+              <div>
+                <label className="label-text">Kho</label>
+                <input
+                  type="number"
+                  className="input-field"
+                  value={form.stock}
+                  onChange={(e) => handleChange("stock", e.target.value)}
                 />
               </div>
             </div>
@@ -348,7 +363,7 @@ export default function Admin() {
                         {product.name}
                       </h4>
                       <p className="mt-1 text-sm text-slate-500">
-                        {product.category || "Sữa rửa mặt"}
+                        Kho: <strong className={product.stock > 0 ? "text-emerald-600" : "text-rose-600"}>{product.stock || 0}</strong>
                       </p>
                       <p className="mt-2 text-sm font-bold text-sky-600">
                         {formatCurrency(product.price)}
